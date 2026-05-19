@@ -1,0 +1,120 @@
+name: IaC Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "infra-addons/**"
+      - ".github/workflows/terraform.yaml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "infra-addons/**"
+
+env:
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  AWS_ROLE_NAME: ${{ secrets.AWS_ROLE_NAME }}
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+  BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE }}
+  DYNAMO_DB_LOCK: ${{ secrets.DYNAMO_DB_LOCK }}
+  TF_destroy: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-infrastructure:
+    name: Deploy VPC and Infrastructure
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./infra-addons/
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Terraform security scan
+        uses: aquasecurity/tfsec-action@v1.0.0
+        with:
+          soft_fail: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          working_directory: ./infra-addons/
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ secrets.AWS_ROLE_NAME }}
+          role-session-name: GitHubActionsSession
+          aws-region: us-east-1
+
+      - name: HashiCorp - Setup Terraform
+        uses: hashicorp/setup-terraform@v3.1.2
+
+      - name: Terraform Init
+        id: init
+        run: |
+          terraform init \
+            --backend-config="bucket=${BUCKET_TF_STATE}" \
+            --backend-config="key=dev/terraform.tfstate" \
+            --backend-config="region=us-east-1" \
+            --backend-config="dynamodb_table=${DYNAMO_DB_LOCK}"
+
+      - name: Terraform Format
+        id: fmt
+        run: terraform fmt -check
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate
+
+      - name: Get dev.tfvars from AWS Secrets Manager
+        id: get_tfvars
+        run: |
+          aws secretsmanager get-secret-value \
+            --secret-id dev.tfvars \
+            --query SecretString \
+            --output text > vars/dev-env.tfvars
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan \
+            -no-color \
+            -input=false \
+            -lock=true \
+            -out planfile \
+            --var-file=vars/dev-env.tfvars
+
+      - name: Terraform Apply
+        id: apply
+        if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' && env.TF_destroy == 'false' }}
+        run: terraform apply -lock=true -auto-approve planfile
+
+      - name: Update kubeconfig
+        id: update_kubeconfig
+        if: ${{ env.TF_destroy == 'false' }}
+        run: aws eks update-kubeconfig --name expense-tracker-cluster --region us-east-1
+
+      - name: Apply ArgoCD application and ingress
+        id: apply_manifests
+        if: ${{ env.TF_destroy == 'false' }}
+        run: |
+          kubectl apply -f application.yaml
+          kubectl apply -f ingress.yaml
+
+      - name: Delete manifests before destroy
+        id: delete_manifests
+        if: ${{ env.TF_destroy == 'true' }}
+        run: |
+          kubectl delete -f application.yaml --ignore-not-found
+          kubectl delete -f ingress.yaml --ignore-not-found
+
+      - name: Terraform Destroy
+        id: destroy
+        if: ${{ env.TF_destroy == 'true' }}
+        run: terraform destroy --var-file=vars/dev-env.tfvars -lock=false -auto-approve

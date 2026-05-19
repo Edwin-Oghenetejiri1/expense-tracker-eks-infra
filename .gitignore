@@ -1,2 +1,3 @@
 infra-live2/dev-env.tfvars
 *.tfvars
+infra-addons/vars/*.tfvars
