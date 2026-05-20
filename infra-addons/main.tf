@@ -87,4 +87,6 @@ module "karpenter" {
     Environment = var.env
     Terraform   = "true"
   }
-}# updated
+}
+
+# updated
