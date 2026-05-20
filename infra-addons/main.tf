@@ -44,7 +44,7 @@ module "eks_blueprints_addons" {
   oidc_provider_arn = module.eks.oidc_provider_arn
 
   eks_addons = {
-    aws-ebs-csi-driver = {        # ← uncommented: required for MongoDB PVC
+    aws-ebs-csi-driver = { # ← uncommented: required for MongoDB PVC
       most_recent = true
     }
   }
@@ -92,3 +92,5 @@ module "karpenter" {
 
 
 # updated
+
+
