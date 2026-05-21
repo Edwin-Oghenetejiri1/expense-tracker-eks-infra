@@ -97,8 +97,8 @@ jobs:
 
       - name: Update kubeconfig
         id: update_kubeconfig
-        if: ${{ env.TF_destroy == 'false' }}
-        run: aws eks update-kubeconfig --name expense-tracker-cluster --region us-east-1
+        run: |
+          aws eks update-kubeconfig --name expense-tracker-cluster --region us-east-1 || true
 
       - name: Apply ArgoCD application and ingress
         id: apply_manifests
@@ -111,8 +111,8 @@ jobs:
         id: delete_manifests
         if: ${{ env.TF_destroy == 'true' }}
         run: |
-          kubectl delete -f application.yaml --ignore-not-found
-          kubectl delete -f ingress.yaml --ignore-not-found
+          kubectl delete -f application.yaml --ignore-not-found || true
+          kubectl delete -f ingress.yaml --ignore-not-found || true
 
       - name: Terraform Destroy
         id: destroy
