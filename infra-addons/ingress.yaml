@@ -1,4 +1,4 @@
-# existing ArgoCD ingress stays as is
+# ArgoCD ingress
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -8,13 +8,13 @@ metadata:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/backend-protocol: HTTPS
-    alb.ingress.kubernetes.io/certificate-arn: "{{ CERT_ARN }}"
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:573986291693:certificate/73c88c7a-e5ee-461d-98b3-1a22bdc7fa5f"
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
     alb.ingress.kubernetes.io/ssl-redirect: "443"
 spec:
   ingressClassName: alb
   rules:
-    - host: argocd.barilon.com
+    - host: argocd.retrogameshop.online
       http:
         paths:
           - path: /
@@ -25,24 +25,24 @@ spec:
                 port:
                   number: 443
 ---
-# existing Grafana ingress stays as is
+# Grafana ingress
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: grafana-dashboard
+  name: grafana-ingress
   namespace: kube-prometheus-stack
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/healthcheck-path: /api/health
     alb.ingress.kubernetes.io/backend-protocol: HTTP
-    alb.ingress.kubernetes.io/certificate-arn: "{{CERT_ARN_GRAFANA}}"
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:573986291693:certificate/2f31ba8f-f312-408c-9f6d-1fa26b871a13"
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
     alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/healthcheck-path: /api/health
 spec:
   ingressClassName: alb
   rules:
-    - host: grafana.barilon.com
+    - host: grafana.retrogameshop.online
       http:
         paths:
           - path: /
@@ -53,7 +53,7 @@ spec:
                 port:
                   number: 80
 ---
-# your expense tracker ingress
+# Expense tracker ingress
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
