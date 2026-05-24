@@ -47,7 +47,6 @@ module "eks_blueprints_addons" {
   oidc_provider_arn = module.eks.oidc_provider_arn
 
   # EBS CSI Driver with proper IAM role
-  enable_aws_ebs_csi_driver = true
   eks_addons = {
     aws-ebs-csi-driver = {
       most_recent              = true
