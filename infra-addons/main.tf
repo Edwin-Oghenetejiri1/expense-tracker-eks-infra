@@ -46,7 +46,8 @@ module "eks_blueprints_addons" {
   # EBS CSI Driver with proper IAM role
   eks_addons = {
     aws-ebs-csi-driver = {
-      most_recent = true
+      most_recent              = true
+      service_account_role_arn = "arn:aws:iam::573986291693:role/AmazonEKS_EBS_CSI_DriverRole"
     }
   }
 
