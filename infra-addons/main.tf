@@ -33,6 +33,9 @@ module "eks" {
 #########################################################################################################
 #                                      EKS BLUEPRINT ADDONS
 #########################################################################################################
+#########################################################################################################
+#                                      EKS BLUEPRINT ADDONS
+#########################################################################################################
 module "eks_blueprints_addons" {
   source     = "aws-ia/eks-blueprints-addons/aws"
   version    = "~> 1.0"
@@ -43,9 +46,12 @@ module "eks_blueprints_addons" {
   cluster_version   = module.eks.cluster_version
   oidc_provider_arn = module.eks.oidc_provider_arn
 
+  # EBS CSI Driver with proper IAM role
+  enable_aws_ebs_csi_driver = true
   eks_addons = {
-    aws-ebs-csi-driver = { # ← uncommented: required for MongoDB PVC
-      most_recent = true
+    aws-ebs-csi-driver = {
+      most_recent              = true
+      service_account_role_arn = module.eks_blueprints_addons.ebs_csi_driver_iam_role_arn
     }
   }
 
@@ -67,7 +73,6 @@ module "eks_blueprints_addons" {
     Environment = var.env
   }
 }
-
 #########################################################################################################
 #                                      KARPENTER
 #########################################################################################################
