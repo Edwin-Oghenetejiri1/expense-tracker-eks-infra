@@ -33,9 +33,6 @@ module "eks" {
 #########################################################################################################
 #                                      EKS BLUEPRINT ADDONS
 #########################################################################################################
-#########################################################################################################
-#                                      EKS BLUEPRINT ADDONS
-#########################################################################################################
 module "eks_blueprints_addons" {
   source     = "aws-ia/eks-blueprints-addons/aws"
   version    = "1.16.3"
@@ -51,6 +48,7 @@ module "eks_blueprints_addons" {
     aws-ebs-csi-driver = {
       most_recent = true
     }
+  }
 
   enable_aws_load_balancer_controller = true
   aws_load_balancer_controller = {
