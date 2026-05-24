@@ -93,8 +93,4 @@ module "karpenter" {
 
 
 
-# retrigger Sun May 24 00:05:38 WAT 2026
-
-
-
 # retrigger Sun May 24 15:52:57 WAT 2026
