@@ -140,3 +140,14 @@ spec:
 
   depends_on = [helm_release.karpenter]
 }
+###############################################################################
+# Pod Identity Association for EBS CSI Driver
+###############################################################################
+resource "aws_eks_pod_identity_association" "ebs_csi" {
+  cluster_name    = module.eks.cluster_name
+  namespace       = "kube-system"
+  service_account = "ebs-csi-controller-sa"
+  role_arn        = "arn:aws:iam::573986291693:role/AmazonEKS_EBS_CSI_DriverRole"
+
+  depends_on = [module.eks_blueprints_addons]
+}
