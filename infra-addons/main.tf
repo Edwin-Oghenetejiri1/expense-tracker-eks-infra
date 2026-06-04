@@ -31,23 +31,64 @@ module "eks" {
 }
 
 #########################################################################################################
+#                                      EBS CSI DRIVER IAM ROLE
+#########################################################################################################
+resource "aws_iam_role" "ebs_csi" {
+  name = "AmazonEKS_EBS_CSI_DriverRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "pods.eks.amazonaws.com"
+      }
+      Action = [
+        "sts:AssumeRole",
+        "sts:TagSession"
+      ]
+    }]
+  })
+
+  tags = {
+    Environment = var.env
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "ebs_csi" {
+  role       = aws_iam_role.ebs_csi.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+}
+
+#########################################################################################################
+#                                      EBS CSI DRIVER POD IDENTITY ASSOCIATION
+#########################################################################################################
+resource "aws_eks_pod_identity_association" "ebs_csi" {
+  cluster_name    = module.eks.cluster_name
+  namespace       = "kube-system"
+  service_account = "ebs-csi-controller-sa"
+  role_arn        = aws_iam_role.ebs_csi.arn
+
+  depends_on = [module.eks, aws_iam_role_policy_attachment.ebs_csi]
+}
+
+#########################################################################################################
 #                                      EKS BLUEPRINT ADDONS
 #########################################################################################################
 module "eks_blueprints_addons" {
   source     = "aws-ia/eks-blueprints-addons/aws"
   version    = "1.16.3"
-  depends_on = [module.eks]
+  depends_on = [module.eks, aws_eks_pod_identity_association.ebs_csi]
 
   cluster_name      = module.eks.cluster_name
   cluster_endpoint  = module.eks.cluster_endpoint
   cluster_version   = module.eks.cluster_version
   oidc_provider_arn = module.eks.oidc_provider_arn
 
-  # EBS CSI Driver with proper IAM role
   eks_addons = {
     aws-ebs-csi-driver = {
       most_recent              = true
-      service_account_role_arn = "arn:aws:iam::573986291693:role/AmazonEKS_EBS_CSI_DriverRole"
+      service_account_role_arn = aws_iam_role.ebs_csi.arn
     }
   }
 
@@ -69,6 +110,7 @@ module "eks_blueprints_addons" {
     Environment = var.env
   }
 }
+
 #########################################################################################################
 #                                      KARPENTER
 #########################################################################################################
@@ -89,30 +131,3 @@ module "karpenter" {
     Terraform   = "true"
   }
 }
-
-
-
-
-
-# retrigger Sun May 24 15:52:57 WAT 2026
-# retry failed addons Sun May 24 17:00:31 WAT 2026
-
-
-
-
-
-
-
-
-
-# unlock Tue May 26 23:18:40 WAT 2026
-
-# deploy Thu Jun  4 01:40:19 WAT 2026
-# deploy Thu Jun  4 01:42:26 WAT 2026
-
-
-
-
-
-
-# deploy Thu Jun  4 23:34:12 WAT 2026
