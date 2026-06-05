@@ -77,7 +77,7 @@ resource "aws_eks_pod_identity_association" "ebs_csi" {
 #########################################################################################################
 module "eks_blueprints_addons" {
   source     = "aws-ia/eks-blueprints-addons/aws"
-  version    = "1.16.3"
+  version    = "1.22.0"
   depends_on = [module.eks, aws_eks_pod_identity_association.ebs_csi]
 
   cluster_name      = module.eks.cluster_name
@@ -102,7 +102,7 @@ module "eks_blueprints_addons" {
     ]
   }
 
-  enable_kube_prometheus_stack = false
+  enable_kube_prometheus_stack = true
   enable_metrics_server        = true
   enable_argocd                = true
 
