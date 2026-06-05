@@ -131,3 +131,6 @@ module "karpenter" {
     Terraform   = "true"
   }
 }
+
+
+
