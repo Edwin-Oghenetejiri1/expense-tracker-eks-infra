@@ -102,7 +102,7 @@ module "eks_blueprints_addons" {
     ]
   }
 
-  enable_kube_prometheus_stack = true
+  enable_kube_prometheus_stack = false
   enable_metrics_server        = true
   enable_argocd                = true
 
